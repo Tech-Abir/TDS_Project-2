@@ -14,7 +14,6 @@ app_port: 7860
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.121.3+-green.svg)](https://fastapi.tiangolo.com/)
 
-An intelligent, autonomous agent built with LangGraph and LangChain that solves data-related quizzes involving web scraping, data processing, analysis, and visualization tasks. The system uses Google's Gemini 2.5 Flash model to orchestrate tool usage and make decisions.
 
 ## 📋 Table of Contents
 
@@ -42,33 +41,12 @@ This project was developed for the TDS (Tools in Data Science) course project, w
 
 The system receives quiz URLs via a REST API, navigates through multiple quiz pages, solves each task using LLM-powered reasoning and specialized tools, and submits answers back to the evaluation server.
 
-## 🏗️ Architecture
-
-The project uses a **LangGraph state machine** architecture with the following components:
-
-```
-┌─────────────┐
-│   FastAPI   │  ← Receives POST requests with quiz URLs
-│   Server    │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│   Agent     │  ← LangGraph orchestrator with Gemini 2.5 Flash
-│   (LLM)     │
-└──────┬──────┘
-       │
-       ├────────────┬────────────┬─────────────┬──────────────┐
-       ▼            ▼            ▼             ▼              ▼
-   [Scraper]   [Downloader]  [Code Exec]  [POST Req]  [Add Deps]
-```
-
 ### Key Components:
 
 1. **FastAPI Server** (`main.py`): Handles incoming POST requests, validates secrets, and triggers the agent
 2. **LangGraph Agent** (`agent.py`): State machine that coordinates tool usage and decision-making
 3. **Tools Package** (`tools/`): Modular tools for different capabilities
-4. **LLM**: Google Gemini 2.5 Flash with rate limiting (9 requests per minute)
+4. **LLM**: GPT-5 with rate limiting (9 requests per minute)
 
 ## ✨ Features
 
@@ -102,23 +80,15 @@ LLM-Analysis-TDS-Project-2/
 
 ## 📦 Installation
 
-### Prerequisites
+### Step 1: Prerequisites
 
 - Python 3.12 or higher
 - [uv](https://github.com/astral-sh/uv) package manager (recommended) or pip
 - Git
 
-### Step 1: Clone the Repository
-
-```bash
-git clone https://github.com/saivijayragav/LLM-Analysis-TDS-Project-2.git
-cd LLM-Analysis-TDS-Project-2
-```
-
 ### Step 2: Install Dependencies
 
 #### Option A: Using `uv` (Recommended)
-
 
 Ensure you have uv installed, then sync the project:
 
@@ -164,14 +134,8 @@ EMAIL=your.email@example.com
 SECRET=your_secret_string
 
 # Google Gemini API Key
-GOOGLE_API_KEY=your_gemini_api_key_here
+AIPIPE_API_KEY=your_api_key_here
 ```
-
-### Getting a Gemini API Key
-
-1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Create a new API key
-3. Copy it to your `.env` file
 
 ## 🚀 Usage
 
@@ -284,35 +248,7 @@ The agent has access to the following tools:
 - Uses `uv add` for fast package resolution
 - Enables the agent to adapt to different task requirements
 
-## 🐳 Docker Deployment
-
-### Build the Image
-
-```bash
-docker build -t llm-analysis-agent .
-```
-
-### Run the Container
-
-```bash
-docker run -p 7860:7860 \
-  -e EMAIL="your.email@example.com" \
-  -e SECRET="your_secret_string" \
-  -e GOOGLE_API_KEY="your_api_key" \
-  llm-analysis-agent
-```
-
-### Deploy to HuggingFace Spaces
-
-1. Create a new Space with Docker SDK
-2. Push this repository to your Space
-3. Add secrets in Space settings:
-   - `EMAIL`
-   - `SECRET`
-   - `GOOGLE_API_KEY`
-4. The Space will automatically build and deploy
-
-## 🧠 How It Works
+## How It Works
 
 ### 1. Request Reception
 
@@ -387,5 +323,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 **Author**: Sai Vijay Ragav 
 **Course**: Tools in Data Science (TDS)
 **Institution**: IIT Madras
+
 
 For questions or issues, please open an issue on the [GitHub repository](https://github.com/saivijayragav/LLM-Analysis-TDS-Project-2).
