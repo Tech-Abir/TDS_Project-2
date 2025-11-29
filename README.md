@@ -36,7 +36,7 @@ The system receives quiz URLs via a REST API, navigates through multiple quiz pa
 1. **FastAPI Server** (`main.py`): Handles incoming POST requests, validates secrets, and triggers the agent
 2. **LangGraph Agent** (`agent.py`): State machine that coordinates tool usage and decision-making
 3. **Tools Package** (`tools/`): Modular tools for different capabilities
-4. **LLM**: GPT-5 with rate limiting (9 requests per minute)
+4. **LLM**: Gemini flash 2.5 with rate limiting (15 requests per minute)
 
 ## ✨ Features
 
@@ -177,7 +177,6 @@ Receives quiz tasks and triggers the autonomous agent.
 
 ```json
 {
-  "email": "your.email@example.com",
   "secret": "your_secret_string",
   "url": "https://example.com/quiz-123"
 }
@@ -310,11 +309,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ---
 
-**Author**: Sai Vijay Ragav 
+**Author**: Abir Saha
 **Course**: Tools in Data Science (TDS)
 **Institution**: IIT Madras
 
-
-For questions or issues, please open an issue on the [GitHub repository](https://github.com/saivijayragav/LLM-Analysis-TDS-Project-2).
 
 
