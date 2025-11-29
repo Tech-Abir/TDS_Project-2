@@ -1,12 +1,3 @@
----
-title: LLM Analysis Quiz Solver
-colorFrom: red
-colorTo: blue
-sdk: docker
-pinned: false
-app_port: 7860
----
-
 # LLM Analysis - Autonomous Quiz Solver Agent
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -325,4 +316,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 
 For questions or issues, please open an issue on the [GitHub repository](https://github.com/saivijayragav/LLM-Analysis-TDS-Project-2).
+
 
