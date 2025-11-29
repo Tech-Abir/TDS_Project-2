@@ -1,6 +1,5 @@
 ---
 title: LLM Analysis Quiz Solver
-emoji: 🏃
 colorFrom: red
 colorTo: blue
 sdk: docker
@@ -62,7 +61,7 @@ The system receives quiz URLs via a REST API, navigates through multiple quiz pa
 ## 📁 Project Structure
 
 ```
-LLM-Analysis-TDS-Project-2/
+TDS-Project-2/
 ├── agent.py                    # LangGraph state machine & orchestration
 ├── main.py                     # FastAPI server with /solve endpoint
 ├── pyproject.toml              # Project dependencies & configuration
@@ -326,3 +325,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 
 For questions or issues, please open an issue on the [GitHub repository](https://github.com/saivijayragav/LLM-Analysis-TDS-Project-2).
+
