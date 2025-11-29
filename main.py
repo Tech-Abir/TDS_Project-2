@@ -8,11 +8,17 @@ import uvicorn
 import os
 from shared_store import url_time, BASE64_STORE
 import time
+from pydantic import BaseModel
 
 load_dotenv()
 
 EMAIL = os.getenv("EMAIL") 
 SECRET = os.getenv("SECRET")
+
+
+class SolveRequest(BaseModel):
+    url: str
+    secret: str
 
 app = FastAPI()
 app.add_middleware(
@@ -32,29 +38,27 @@ def healthz():
     }
 
 @app.post("/solve")
-async def solve(request: Request, background_tasks: BackgroundTasks):
-    try:
-        data = await request.json()
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid JSON")
-    if not data:
-        raise HTTPException(status_code=400, detail="Invalid JSON")
-    url = data.get("url")
-    secret = data.get("secret")
-    if not url or not secret:
-        raise HTTPException(status_code=400, detail="Invalid JSON")
-    
-    if secret != SECRET:
+async def solve(request: SolveRequest, background_tasks: BackgroundTasks):
+    if request.secret != SECRET:
         raise HTTPException(status_code=403, detail="Invalid secret")
-    url_time.clear() 
-    BASE64_STORE.clear()  
-    print("Verified starting the task...")
+
+    url = request.url
+    if not url:
+        raise HTTPException(status_code=400, detail="Missing URL")
+
+    # --- CLEAR STATE ---
+    url_time.clear()
+    BASE64_STORE.clear()
+
+    # --- SET ENV VARS FOR AGENT ---
     os.environ["url"] = url
     os.environ["offset"] = "0"
     url_time[url] = time.time()
+
+    # --- START AGENT ASYNC ---
     background_tasks.add_task(run_agent, url)
 
-    return JSONResponse(status_code=200, content={"status": "ok"})
+    return {"status": "ok", "message": f"Agent started for URL: {url}"}
 
 
 if __name__ == "__main__":
