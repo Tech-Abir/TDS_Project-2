@@ -60,6 +60,13 @@ async def solve(request: SolveRequest, background_tasks: BackgroundTasks):
 
     return {"status": "ok", "message": f"Agent started for URL: {url}"}
 
+@app.get("/")
+def home():
+    """Simple home endpoint."""
+    return {
+        "message": "Welcome to the FastAPI Solve Agent API. Use /solve to run the agent."
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=7860)
+
