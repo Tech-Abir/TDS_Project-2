@@ -45,22 +45,18 @@ TOOLS = [
 # LLM INIT
 # -------------------------------------------------
 rate_limiter = InMemoryRateLimiter(
-    requests_per_second=4 / 60,
-    check_every_n_seconds=1,
-    max_bucket_size=4
+    requests_per_second=1 / 4,  
+    check_every_n_seconds=0.5,  
+    max_bucket_size=5           
 )
-os.environ["OPENAI_API_KEY"] = AIPIPE_API_KEY
-os.environ["OPENAI_API_BASE"] = "https://aipipe.org/openai/v1"
 
-from langchain_openai import ChatOpenAI
 
-llm = ChatOpenAI(
-    model="gpt-5",
-    temperature=0.2,
-    max_tokens=4096,
-    api_key=os.getenv("AIPIPE_API_KEY"),
-    base_url=os.getenv("OPENAI_API_BASE"),
-)
+llm = init_chat_model(
+    model_provider="google_genai",
+    model="gemini-2.5-flash",
+    api_key=os.environ["AIPIPE_API_KEY"],
+    rate_limiter=rate_limiter
+).bind_tools(TOOLS)
 
 
 # -------------------------------------------------
@@ -68,14 +64,12 @@ llm = ChatOpenAI(
 # -------------------------------------------------
 SYSTEM_PROMPT = f"""
 You are an autonomous quiz-solving agent.
-
 Your job is to:
 1. Load each quiz page from the given URL.
 2. Extract instructions, parameters, and submit endpoint.
 3. Solve tasks exactly.
 4. Submit answers ONLY to the correct endpoint.
 5. Follow new URLs until none remain, then output END.
-
 Rules:
 - For base64 generation of an image NEVER use your own code, always use the "encode_image_to_base64" tool that's provided
 - Never hallucinate URLs or fields.
@@ -115,29 +109,30 @@ def agent_node(state: AgentState):
     # --- TIME HANDLING START ---
     cur_time = time.time()
     cur_url = os.getenv("url")
-    
-    # SAFE GET: Prevents crash if url is None or not in dict
-    prev_time = url_time.get(cur_url) 
+
+    # Reset start time if missing (prevents stale timeout)
+    if cur_url not in url_time:
+        url_time[cur_url] = cur_time
+
+    prev_time = float(url_time.get(cur_url, cur_time))
     offset = os.getenv("offset", "0")
+    diff = cur_time - prev_time
 
-    if prev_time is not None:
-        prev_time = float(prev_time)
-        diff = cur_time - prev_time
+    # Timeout logic: submit wrong answer but continue
+    if diff >= 180 or (offset != "0" and (cur_time - float(offset)) > 90):
+        print(f"Timeout exceeded ({diff}s) — submitting forced wrong answer.")
 
-        if diff >= 180 or (offset != "0" and (cur_time - float(offset)) > 90):
-            print(f"Timeout exceeded ({diff}s) — instructing LLM to purposely submit wrong answer.")
+        fail_instruction = """
+        You have exceeded the time limit for this task (over 180 seconds).
+        Immediately call the `post_request` tool and submit a WRONG answer for the CURRENT quiz.
+        """
 
-            fail_instruction = """
-            You have exceeded the time limit for this task (over 180 seconds).
-            Immediately call the `post_request` tool and submit a WRONG answer for the CURRENT quiz.
-            """
+        fail_msg = HumanMessage(content=fail_instruction)
+        result = llm.invoke(state["messages"] + [fail_msg])
 
-            # Using HumanMessage (as you correctly implemented)
-            fail_msg = HumanMessage(content=fail_instruction)
-
-            # We invoke the LLM immediately with this new instruction
-            result = llm.invoke(state["messages"] + [fail_msg])
-            return {"messages": [result]}
+        # Reset timer so next URL is fresh
+        url_time[cur_url] = time.time()
+        return {"messages": [result]}
     # --- TIME HANDLING END ---
 
     trimmed_messages = trim_messages(
@@ -148,26 +143,22 @@ def agent_node(state: AgentState):
         start_on="human",
         token_counter=llm, 
     )
-    
-    # Better check: Does it have a HumanMessage?
+
+    # Ensure human message exists for LLM
     has_human = any(msg.type == "human" for msg in trimmed_messages)
-    
     if not has_human:
-        print("WARNING: Context was trimmed too far. Injecting state reminder.")
-        # We remind the agent of the current URL from the environment
+        print("WARNING: Context trimmed too far. Injecting state reminder.")
         current_url = os.getenv("url", "Unknown URL")
         reminder = HumanMessage(content=f"Context cleared due to length. Continue processing URL: {current_url}")
-        
-        # We append this to the trimmed list (temporarily for this invoke)
         trimmed_messages.append(reminder)
-    # ----------------------------------------
 
+    # Invoke LLM
     print(f"--- INVOKING AGENT (Context: {len(trimmed_messages)} items) ---")
-    
     result = llm.invoke(trimmed_messages)
 
+    # Reset timer for next iteration
+    url_time[cur_url] = time.time()
     return {"messages": [result]}
-
 
 # -------------------------------------------------
 # ROUTE LOGIC (UPDATED FOR MALFORMED CALLS)
@@ -227,7 +218,6 @@ graph.add_conditional_edges(
 )
 
 app = graph.compile()
-
 
 # -------------------------------------------------
 # RUNNER
