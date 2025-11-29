@@ -8,12 +8,11 @@ from collections import defaultdict
 from typing import Any, Dict, Optional
 
 cache = defaultdict(int)
-retry_limit = 4
+retry_limit = 6
 @tool
 def post_request(url: str, payload: Dict[str, Any], headers: Optional[Dict[str, str]] = None) -> Any:
     """
     Send an HTTP POST request to the given URL with the provided payload.
-
     This function is designed for LangGraph applications, where it can be wrapped
     as a Tool or used inside a Runnable to call external APIs, webhooks, or backend
     services during graph execution.
@@ -23,11 +22,9 @@ def post_request(url: str, payload: Dict[str, Any], headers: Optional[Dict[str, 
         payload (Dict[str, Any]): The JSON-serializable request body.
         headers (Optional[Dict[str, str]]): Optional HTTP headers to include
             in the request. If omitted, a default JSON header is applied.
-
     Returns:
         Any: The response body. If the server returns JSON, a parsed dict is
         returned. Otherwise, the raw text response is returned.
-
     Raises:
         requests.HTTPError: If the server responds with an unsuccessful status.
         requests.RequestException: For network-related errors.
